@@ -205,6 +205,8 @@ export const TeamBoardView: React.FC = () => {
                       task={task}
                       date={selectedDate}
                       onEdit={isAdmin ? handleEdit : undefined}
+                      minimal={!isAdmin}
+                      readOnly={!isAdmin && !isSelf}
                     />
                   ))
                 ) : (

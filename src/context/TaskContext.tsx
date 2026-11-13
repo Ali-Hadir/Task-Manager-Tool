@@ -41,6 +41,7 @@ interface TaskContextType {
   setTaskCompletion: (taskId: string, date: Date, completed: boolean) => void;
   markAllForDate: (date: Date, completed: boolean, memberIdFilter?: string) => void;
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => Task;
+  addMultipleTasks: (tasks: Omit<Task, 'id' | 'createdAt'>[]) => Promise<number>;
   updateTask: (task: Task) => void;
   deleteTask: (taskId: string) => void;
   addMember: (member: Omit<TeamMember, 'id'>) => TeamMember;
@@ -50,6 +51,8 @@ interface TaskContextType {
   getTaskCompletion: (taskId: string, date?: Date) => TaskCompletionRecord | undefined;
   isTaskModalOpen: boolean;
   setIsTaskModalOpen: (open: boolean) => void;
+  isBulkModalOpen: boolean;
+  setIsBulkModalOpen: (open: boolean) => void;
   editingTask: Task | null;
   setEditingTask: (task: Task | null) => void;
   isCloudSynced: boolean;
@@ -69,6 +72,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [viewMode, setViewMode] = useState<ViewMode>('individual');
   const [selectedMemberId, setSelectedMemberId] = useState<string>('all');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
 
@@ -496,6 +500,38 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newTask;
   };
 
+  const addMultipleTasks = async (tasksInput: Omit<Task, 'id' | 'createdAt'>[]): Promise<number> => {
+    if (tasksInput.length === 0) return 0;
+
+    const now = Date.now();
+    const createdAt = new Date().toISOString();
+    const newTasks: Task[] = tasksInput.map((taskInput, idx) => ({
+      ...taskInput,
+      id: `task-${now}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+      createdAt,
+    }));
+
+    setTasks((prev) => [...newTasks, ...prev]);
+
+    try {
+      // Firestore batches support up to 500 operations per batch
+      const chunkSize = 450;
+      for (let i = 0; i < newTasks.length; i += chunkSize) {
+        const chunk = newTasks.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        chunk.forEach((t) => {
+          batch.set(doc(db, 'tasks', t.id), t);
+        });
+        await batch.commit();
+      }
+    } catch (err) {
+      console.error('Failed to batch create tasks in cloud:', err);
+      throw err;
+    }
+
+    return newTasks.length;
+  };
+
   const updateTask = (updated: Task) => {
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     setDoc(doc(db, 'tasks', updated.id), updated).catch((err) =>
@@ -593,6 +629,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTaskCompletion,
         markAllForDate,
         addTask,
+        addMultipleTasks,
         updateTask,
         deleteTask,
         addMember,
@@ -602,6 +639,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getTaskCompletion,
         isTaskModalOpen,
         setIsTaskModalOpen,
+        isBulkModalOpen,
+        setIsBulkModalOpen,
         editingTask,
         setEditingTask,
         isCloudSynced,

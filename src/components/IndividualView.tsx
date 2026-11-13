@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTasks } from '../context/TaskContext';
 import { TaskItem } from './TaskItem';
 import { formatDisplayDate } from '../utils/dateUtils';
-import { CheckCircle2, Search, Plus, Calendar, Shield, User } from 'lucide-react';
+import { CheckCircle2, Search, Plus, Calendar, User } from 'lucide-react';
 
 export const IndividualView: React.FC = () => {
   const {
@@ -62,21 +62,16 @@ export const IndividualView: React.FC = () => {
     <div className="space-y-6">
       {/* Role Banner */}
       {!isAdmin && (
-        <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
               <User className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-xs font-bold text-slate-900">
-                Personal Checklist for {currentUser?.name}
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                You are viewing only your assigned tasks. Completed checks sync to the live team board.
-              </p>
-            </div>
+            <h2 className="text-xs font-bold text-slate-900">
+              Personal Checklist for {currentUser?.name}
+            </h2>
           </div>
-          <span className="text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">
+          <span className="text-[11px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded whitespace-nowrap shrink-0">
             Role: {currentUser?.role}
           </span>
         </div>
@@ -204,9 +199,10 @@ export const IndividualView: React.FC = () => {
             <TaskItem
               key={task.id}
               task={task}
-              member={memberMap.get(task.assigneeId)}
+              member={isAdmin ? memberMap.get(task.assigneeId) : undefined}
               date={selectedDate}
               onEdit={isAdmin ? handleEdit : undefined}
+              minimal={!isAdmin}
             />
           ))}
         </div>

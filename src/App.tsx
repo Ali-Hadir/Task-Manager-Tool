@@ -9,6 +9,7 @@ import { TaskManagementView } from './components/TaskManagementView';
 import { AdminUserManagementView } from './components/AdminUserManagementView';
 import { AuthView } from './components/AuthView';
 import { TaskModal } from './components/TaskModal';
+import { BulkTaskUploadModal } from './components/BulkTaskUploadModal';
 
 const MainAppContent: React.FC = () => {
   const { viewMode, currentUser } = useTasks();
@@ -28,15 +29,22 @@ const MainAppContent: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {viewMode === 'individual' && <IndividualView />}
-        {viewMode === 'team' && <TeamBoardView />}
-        {viewMode === 'reports' && <ReportsView />}
-        {viewMode === 'manage' && <TaskManagementView />}
-        {viewMode === 'admin_users' && <AdminUserManagementView />}
+        {currentUser.isAdmin ? (
+          <>
+            {viewMode === 'individual' && <IndividualView />}
+            {viewMode === 'team' && <TeamBoardView />}
+            {viewMode === 'reports' && <ReportsView />}
+            {viewMode === 'manage' && <TaskManagementView />}
+            {viewMode === 'admin_users' && <AdminUserManagementView />}
+          </>
+        ) : (
+          <>{viewMode === 'team' ? <TeamBoardView /> : <IndividualView />}</>
+        )}
       </main>
 
       {/* Shared Task Creator & Recurrence Editor Modal */}
       <TaskModal />
+      <BulkTaskUploadModal />
 
       {/* Minimal Footer */}
       <footer className="border-t border-slate-200 bg-white py-4 mt-auto">

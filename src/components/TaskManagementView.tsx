@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTasks } from '../context/TaskContext';
 import { Task } from '../types';
 import { getRecurrenceLabel } from '../utils/dateUtils';
@@ -8,18 +8,40 @@ import {
   Trash2,
   Calendar,
   Layers,
-  CheckSquare,
   AlertCircle,
   Repeat,
   Download,
   Upload,
+  ChevronDown,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 export const TaskManagementView: React.FC = () => {
-  const { tasks, members, deleteTask, setEditingTask, setIsTaskModalOpen } = useTasks();
+  const {
+    tasks,
+    members,
+    deleteTask,
+    setEditingTask,
+    setIsTaskModalOpen,
+    setIsBulkModalOpen,
+    currentUser,
+  } = useTasks();
 
+  const isAdmin = currentUser?.isAdmin;
   const [filterType, setFilterType] = useState<'all' | 'daily' | 'weekdays' | 'month_week'>('all');
   const [filterMember, setFilterMember] = useState<string>('all');
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
+        setIsAddMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const memberMap = new Map(members.map((m) => [m.id, m]));
 
@@ -97,36 +119,78 @@ export const TaskManagementView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <label className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer">
-            <Upload className="w-3.5 h-3.5 text-slate-500" />
-            <span>Import JSON</span>
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImportJSON}
-              className="hidden"
-            />
-          </label>
+          {isAdmin && (
+            <>
+              <label className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer">
+                <Upload className="w-3.5 h-3.5 text-slate-500" />
+                <span>Import JSON</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportJSON}
+                  className="hidden"
+                />
+              </label>
 
-          <button
-            onClick={handleExportJSON}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-            title="Download task configuration backup"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export JSON</span>
-          </button>
+              <button
+                onClick={handleExportJSON}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                title="Download task configuration backup"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>Export JSON</span>
+              </button>
 
-          <button
-            onClick={() => {
-              setEditingTask(null);
-              setIsTaskModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Recurring Task</span>
-          </button>
+              <div className="relative" ref={addMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shadow-xs shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Task</span>
+                  <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+                </button>
+
+                {isAddMenuOpen && (
+                  <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-lg py-1.5 z-50">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddMenuOpen(false);
+                        setEditingTask(null);
+                        setIsTaskModalOpen(true);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-800 hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-slate-500" />
+                      <div>
+                        <div className="font-semibold">Add Single Task</div>
+                        <div className="text-[10px] text-slate-400">Create one recurring schedule</div>
+                      </div>
+                    </button>
+
+                    <div className="my-1 border-t border-slate-100" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddMenuOpen(false);
+                        setIsBulkModalOpen(true);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-800 hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                      <div>
+                        <div className="font-semibold">Add Multiple Tasks</div>
+                        <div className="text-[10px] text-slate-400">Excel template & bulk upload</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -257,7 +321,7 @@ export const TaskManagementView: React.FC = () => {
                 <th className="py-3 px-4">Responsible Member</th>
                 <th className="py-3 px-4">Recurrence Frequency</th>
                 <th className="py-3 px-4">Priority</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                {isAdmin && <th className="py-3 px-4 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -319,24 +383,26 @@ export const TaskManagementView: React.FC = () => {
                       )}
                     </td>
 
-                    <td className="py-3 px-4 text-right">
-                      <div className="inline-flex items-center gap-1">
-                        <button
-                          onClick={() => handleEdit(task)}
-                          className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
-                          title="Edit task"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(task.id, task.title)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                          title="Delete task"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
+                    {isAdmin && (
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            onClick={() => handleEdit(task)}
+                            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                            title="Edit task"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(task.id, task.title)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                            title="Delete task"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
