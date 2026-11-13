@@ -1,0 +1,6 @@
+{
+  "name": "TaskFlow: Minimalist Recurring Task Hub",
+  "description": "Minimalist recurring task builder and team verification hub with automated daily checklists, flexible recurrence schedules, and weekly/monthly compliance reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

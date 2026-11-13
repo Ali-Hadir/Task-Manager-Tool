@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reusable validation
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users collection: for credentials, approval status and user management
+    match /users/{userId} {
+      allow read, write: if isValidId(userId);
+    }
+
+    // Tasks collection: readable and writable by registered and approved team members
+    match /tasks/{taskId} {
+      allow read, write: if isValidId(taskId);
+    }
+
+    // Members collection
+    match /members/{memberId} {
+      allow read, write: if isValidId(memberId);
+    }
+
+    // Completions collection: keyed by {date}_{taskId}
+    match /completions/{completionId} {
+      allow read, write: if isValidId(completionId);
+    }
+  }
+}

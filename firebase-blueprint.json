@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "User credential, role, profile and approval status for TaskFlow access",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "username": { "type": "string", "maxLength": 50 },
+        "password": { "type": "string", "maxLength": 100 },
+        "name": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["approved", "pending", "rejected"] },
+        "isAdmin": { "type": "boolean" },
+        "memberId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "username", "password", "name", "role", "status", "isAdmin", "createdAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A recurring operational task definition with schedule and assignee",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 300 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "assigneeId": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "maxLength": 100 },
+        "priority": { "type": "string", "enum": ["normal", "high"] },
+        "recurrence": { "type": "object" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "assigneeId", "category", "recurrence", "createdAt"]
+    },
+    "TeamMember": {
+      "title": "TeamMember",
+      "description": "A team member who is assigned to recurring tasks",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 200 },
+        "initials": { "type": "string", "maxLength": 10 },
+        "color": { "type": "object" }
+      },
+      "required": ["id", "name", "role", "initials", "color"]
+    },
+    "TaskCompletion": {
+      "title": "TaskCompletion",
+      "description": "Historical log of a task verification on a specific date",
+      "type": "object",
+      "properties": {
+        "taskId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 30 },
+        "completed": { "type": "boolean" },
+        "completedAt": { "type": "string" },
+        "completedBy": { "type": "string", "maxLength": 128 },
+        "notes": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["taskId", "date", "completed"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserAccount",
+      "description": "User credential profiles with approval status"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Collection of team recurring tasks"
+    },
+    "/members/{memberId}": {
+      "schema": "TeamMember",
+      "description": "Collection of team members"
+    },
+    "/completions/{completionId}": {
+      "schema": "TaskCompletion",
+      "description": "Daily verification checks keyed by date_taskId"
+    }
+  }
+}
